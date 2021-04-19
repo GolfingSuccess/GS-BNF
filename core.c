@@ -262,10 +262,8 @@ void free_grammar(bnf_grammar x)
         for (size_t list = 0; list < x->rules[rule].expr.list_number; ++list)
         {
             for (size_t term = 0; term < x->rules[rule].expr.lists[list].term_number; ++term)
-            {
                 if (x->rules[rule].expr.lists[list].terms[term].type == TRM_LIT)
                     free(x->rules[rule].expr.lists[list].terms[term].value.literal);
-            }
             free(x->rules[rule].expr.lists[list].terms);
         }
         free(x->rules[rule].expr.lists);
