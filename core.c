@@ -5,7 +5,7 @@
 #define LETTERS "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 #define DIGITS "0123456789"
 #define CHARACTERS LETTERS DIGITS "| !#$%&()*+,-./:;>=<?@[\\]^_`{}~"
-#define BELONGS(set, chr) (!!strchr(set, chr))
+#define BELONGS(set, chr) (!!strchr((set), (chr)))
 
 static int is_opt_whitespace(char x[], size_t size)
 {
