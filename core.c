@@ -3,8 +3,8 @@
 #include "bnf.h"
 
 #define LETTERS "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-#define DIGITS "0123456789"
-#define CHARACTERS LETTERS DIGITS "| !#$%&()*+,-./:;>=<?@[\\]^_`{}~"
+#define ALNUM LETTERS "0123456789"
+#define CHARACTERS ALNUM "| !#$%&()*+,-./:;>=<?@[\\]^_`{}~"
 #define BELONGS(set, chr) (!!strchr((set), (chr)))
 
 static int is_opt_whitespace(char x[], size_t size)
@@ -15,10 +15,24 @@ static int is_opt_whitespace(char x[], size_t size)
     return 1;
 }
 
-static int is_literal(char x[], size_t size)
+static int is_rule_name(char x[], size_t size)
+{
+    if (!size || !BELONGS(LETTERS, x[0]))
+        return 0;
+    for (size_t i = 1; i < size; ++i)
+        if (!BELONGS(ALNUM "-", x[i]))
+            return 0;
+    return 1;
+}
+
+static int is_term(char x[], size_t size)
 {
     char quote;
-    if (size < 2 || x[0] != x[size - 1])
+    if (size < 2)
+        return 0;
+    if (x[0] == '<' && x[size - 1] == '>' && is_rule_name(x + 1, size - 2))
+        return 1;
+    if (x[0] != x[size - 1])
         return 0;
     quote = x[0] == '"' ? '\'' : x[0] == '\'' ? '"' : '\0';
     if (!quote)
@@ -27,21 +41,6 @@ static int is_literal(char x[], size_t size)
         if (x[i] != quote && !BELONGS(CHARACTERS, x[i]))
             return 0;
     return 1;
-}
-
-static int is_rule_name(char x[], size_t size)
-{
-    if (!size || !BELONGS(LETTERS, x[0]))
-        return 0;
-    for (size_t i = 1; i < size; ++i)
-        if (!BELONGS(LETTERS DIGITS "-", x[i]))
-            return 0;
-    return 1;
-}
-
-static int is_term(char x[], size_t size)
-{
-    return is_literal(x, size) || (size >= 2 && x[0] == '<' && x[size - 1] == '>' && is_rule_name(x + 1, size - 2));
 }
 
 static size_t findlen(int rule(char[], size_t), char *x, size_t size, size_t offset)
@@ -130,19 +129,6 @@ static int is_rule(char x[], size_t size)
     return index == size;
 }
 
-static int is_syntax(char x[])
-{
-    size_t index = 0, len = strlen(x), tmp;
-    while (index != len)
-    {
-        tmp = findlen(is_rule, x, len, index);
-        if (tmp == -1)
-            return 0;
-        index += tmp;
-    }
-    return 1;
-}
-
 static bnf_term parse_term(char x[], size_t xsize, bnf_rule r[], size_t rsize)
 {
     char *tmp;
@@ -182,60 +168,21 @@ static bnf_list parse_list(char x[], size_t xsize, bnf_rule r[], size_t rsize)
     return res;
 }
 
-static bnf_expression parse_expression(char x[], size_t xsize, bnf_rule r[], size_t rsize)
-{
-    size_t index = 0, len;
-    bnf_expression res;
-    res.list_number = 0;
-    res.lists = NULL;
-    while (1)
-    {
-        res.lists = realloc(res.lists, ++res.list_number * sizeof(bnf_list));
-        res.lists[res.list_number - 1] = parse_list(x + index, len = findlen(is_list, x, xsize, index), r, rsize);
-        index += len;
-        if (index == xsize)
-            return res;
-        index += findlen(is_opt_whitespace, x, xsize, index) + 1;
-        index += findlen(is_opt_whitespace, x, xsize, index);
-    }
-    return res;
-}
-
-static void define_rule(char x[], size_t xsize, bnf_rule r[], size_t rsize)
-{
-    size_t index = findlen(is_opt_whitespace, x, xsize, 0) + 1,
-           tmp = findlen(is_rule_name, x, xsize, index);
-    for (size_t i = 0; i < rsize; ++i)
-        if (!strncmp(r[i].name, x + index, tmp))
-        {
-            index += tmp + 1;
-            index += findlen(is_opt_whitespace, x, xsize, index) + 3;
-            index += findlen(is_opt_whitespace, x, xsize, index);
-            r[i].expr = parse_expression(x + index, findlen(is_expression, x, xsize, index), r, rsize);
-            break;
-        }
-}
-
-static struct bnf_syntax parse_syntax(char x[], size_t xsize, bnf_rule r[], size_t rsize)
-{
-    size_t index = 0, tmp;
-    struct bnf_syntax res = {rsize, r};
-    while (index != xsize)
-    {
-        define_rule(x + index, tmp = findlen(is_rule, x, xsize, index), r, rsize);
-        index += tmp;
-    }
-    return res;
-}
-
 bnf_grammar parse_grammar(char x[])
 {
-    size_t index = 0, len, tmp, rnumber = 0;
+    size_t index = 0, len = strlen(x), tmp, rnumber = 0;
     bnf_rule *rules = NULL;
     bnf_grammar s;
-    if (!is_syntax(x))
+    if (!len)
         return NULL;
-    len = strlen(x);
+    while (index != len)
+    {
+        tmp = findlen(is_rule, x, len, index);
+        if (tmp == -1)
+            return NULL;
+        index += tmp;
+    }
+    index = 0;
     while (index != len)
     {
         rules = realloc(rules, ++rnumber * sizeof(bnf_rule));
@@ -250,7 +197,29 @@ bnf_grammar parse_grammar(char x[])
         index += findlen(is_line_end, x, len, index);
     }
     s = malloc(sizeof(struct bnf_syntax));
-    *s = parse_syntax(x, strlen(x), rules, rnumber);
+    index = 0;
+    s->rule_number = rnumber;
+    s->rules = rules;
+    for (size_t i = 0; i < rnumber; ++i)
+    {
+        index += findlen(is_opt_whitespace, x, len, index) + 1;
+        index += findlen(is_rule_name, x, len, index) + 1;
+        index += findlen(is_opt_whitespace, x, len, index) + 3;
+        index += findlen(is_opt_whitespace, x, len, index);
+        rules[i].expr.list_number = 0;
+        rules[i].expr.lists = NULL;
+        while (1)
+        {
+            rules[i].expr.lists = realloc(rules[i].expr.lists, ++rules[i].expr.list_number * sizeof(bnf_list));
+            rules[i].expr.lists[rules[i].expr.list_number - 1] = parse_list(x + index, tmp = findlen(is_list, x, len, index), rules, rnumber);
+            index += tmp;
+            if ((tmp = findlen(is_line_end, x, len, index)) != -1)
+                break;
+            index += findlen(is_opt_whitespace, x, len, index) + 1;
+            index += findlen(is_opt_whitespace, x, len, index);
+        }
+        index += tmp;
+    }
     return s;
 }
 
