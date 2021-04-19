@@ -2,40 +2,10 @@
 #include <string.h>
 #include "bnf.h"
 
-static int is_letter(char x)
-{
-    return !!strchr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", x);
-}
-
-static int is_digit(char x)
-{
-    return !!strchr("0123456789", x);
-}
-
-static int is_symbol(char x)
-{
-    return !!strchr("| !#$%&()*+,-./:;>=<?@[\\]^_`{}~", x);
-}
-
-static int is_character(char x)
-{
-    return is_letter(x) || is_digit(x) || is_symbol(x);
-}
-
-static int is_character1(char x)
-{
-    return is_character(x) || x == '\'';
-}
-
-static int is_character2(char x)
-{
-    return is_character(x) || x == '"';
-}
-
-static int is_rule_char(char x)
-{
-    return is_letter(x) || is_digit(x) || x == '-';
-}
+#define LETTERS "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+#define DIGITS "0123456789"
+#define CHARACTERS LETTERS DIGITS "| !#$%&()*+,-./:;>=<?@[\\]^_`{}~"
+#define BELONGS(set, chr) (!!strchr(set, chr))
 
 static int is_opt_whitespace(char x[], size_t size)
 {
@@ -48,7 +18,7 @@ static int is_opt_whitespace(char x[], size_t size)
 static int is_text1(char x[], size_t size)
 {
     for (size_t i = 0; i < size; ++i)
-        if (!is_character1(x[i]))
+        if (!BELONGS(CHARACTERS "'", x[i]))
             return 0;
     return 1;
 }
@@ -56,17 +26,17 @@ static int is_text1(char x[], size_t size)
 static int is_text2(char x[], size_t size)
 {
     for (size_t i = 0; i < size; ++i)
-        if (!is_character2(x[i]))
+        if (!BELONGS(CHARACTERS "\"", x[i]))
             return 0;
     return 1;
 }
 
 static int is_rule_name(char x[], size_t size)
 {
-    if (!size || !is_letter(x[0]))
+    if (!size || !BELONGS(LETTERS, x[0]))
         return 0;
     for (size_t i = 1; i < size; ++i)
-        if (!is_rule_char(x[i]))
+        if (!BELONGS(LETTERS DIGITS "-", x[i]))
             return 0;
     return 1;
 }
