@@ -227,15 +227,15 @@ static bnf_term parse_term(char x[], size_t xsize, bnf_rule r[], size_t rsize)
 
 static bnf_list parse_list(char x[], size_t xsize, bnf_rule r[], size_t rsize)
 {
-    size_t index = 0, tmp;
+    size_t index = 0, len;
     bnf_list res;
     res.term_number = 0;
     res.terms = NULL;
     while (index != xsize)
     {
         res.terms = realloc(res.terms, ++res.term_number * sizeof(bnf_term));
-        res.terms[res.term_number - 1] = parse_term(x + index, tmp = findlen(is_term, x, xsize, index), r, rsize);
-        index = tmp;
+        res.terms[res.term_number - 1] = parse_term(x + index, len = findlen(is_term, x, xsize, index), r, rsize);
+        index += len;
         index += findlen(is_opt_whitespace, x, xsize, index);
     }
     return res;
@@ -243,15 +243,17 @@ static bnf_list parse_list(char x[], size_t xsize, bnf_rule r[], size_t rsize)
 
 static bnf_expression parse_expression(char x[], size_t xsize, bnf_rule r[], size_t rsize)
 {
-    size_t index = 0, tmp;
+    size_t index = 0, len;
     bnf_expression res;
     res.list_number = 0;
     res.lists = NULL;
-    while (index != xsize)
+    while (1)
     {
         res.lists = realloc(res.lists, ++res.list_number * sizeof(bnf_list));
-        res.lists[res.list_number - 1] = parse_list(x + index, tmp = findlen(is_list, x, xsize, index), r, rsize);
-        index = tmp;
+        res.lists[res.list_number - 1] = parse_list(x + index, len = findlen(is_list, x, xsize, index), r, rsize);
+        index += len;
+        if (index == xsize)
+            return res;
         index += findlen(is_opt_whitespace, x, xsize, index) + 1;
         index += findlen(is_opt_whitespace, x, xsize, index);
     }
@@ -273,10 +275,10 @@ static void define_rule(char x[], size_t xsize, bnf_rule r[], size_t rsize)
         }
 }
 
-static bnf_syntax parse_syntax(char x[], size_t xsize, bnf_rule r[], size_t rsize)
+static struct bnf_syntax parse_syntax(char x[], size_t xsize, bnf_rule r[], size_t rsize)
 {
     size_t index = 0, tmp;
-    bnf_syntax res = {rsize, r};
+    struct bnf_syntax res = {rsize, r};
     while (index != xsize)
     {
         define_rule(x + index, tmp = findlen(is_rule, x, xsize, index), r, rsize);
@@ -285,13 +287,13 @@ static bnf_syntax parse_syntax(char x[], size_t xsize, bnf_rule r[], size_t rsiz
     return res;
 }
 
-bnf_syntax parse_grammar(char x[])
+bnf_grammar parse_grammar(char x[])
 {
-    size_t index = 0, len, tmp, rnumber;
-    bnf_rule *rules;
-    bnf_syntax invalid = {-1};
+    size_t index = 0, len, tmp, rnumber = 0;
+    bnf_rule *rules = NULL;
+    bnf_grammar s;
     if (!is_syntax(x))
-        return invalid;
+        return NULL;
     len = strlen(x);
     while (index != len)
     {
@@ -306,12 +308,27 @@ bnf_syntax parse_grammar(char x[])
         index += findlen(is_expression, x, len, index);
         index += findlen(is_line_end, x, len, index);
     }
-    return parse_syntax(x, strlen(x), rules, rnumber);
+    s = malloc(sizeof(struct bnf_syntax));
+    *s = parse_syntax(x, strlen(x), rules, rnumber);
+    return s;
 }
 
-#include <stdio.h>
-int main()
+void free_grammar(bnf_grammar x)
 {
-    printf("%d\n", is_syntax("<a>::='3'\n"));
-    return 0;
+    for (size_t rule = 0; rule < x->rule_number; ++rule)
+    {
+        free(x->rules[rule].name);
+        for (size_t list = 0; list < x->rules[rule].expr.list_number; ++list)
+        {
+            for (size_t term = 0; term < x->rules[rule].expr.lists[list].term_number; ++term)
+            {
+                if (x->rules[rule].expr.lists[list].terms[term].type == TRM_LIT)
+                    free(x->rules[rule].expr.lists[list].terms[term].value.literal);
+            }
+            free(x->rules[rule].expr.lists[list].terms);
+        }
+        free(x->rules[rule].expr.lists);
+    }
+    free(x->rules);
+    free(x);
 }

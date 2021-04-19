@@ -1,5 +1,5 @@
-#include <stddef.h>
-
+#ifndef GS_BNF_H_INCLUDED
+#define GS_BNF_H_INCLUDED
 enum trm_type
 {
     TRM_LIT,
@@ -36,8 +36,14 @@ typedef struct bnf_rule
     bnf_expression expr;
 } bnf_rule;
 
-typedef struct
+struct bnf_syntax
 {
     size_t rule_number;
     bnf_rule *rules;
-} bnf_syntax;
+};
+
+typedef struct bnf_syntax *bnf_grammar;
+
+bnf_grammar parse_grammar(char []);
+void free_grammar(bnf_grammar);
+#endif
