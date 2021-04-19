@@ -15,18 +15,16 @@ static int is_opt_whitespace(char x[], size_t size)
     return 1;
 }
 
-static int is_text1(char x[], size_t size)
+static int is_literal(char x[], size_t size)
 {
-    for (size_t i = 0; i < size; ++i)
-        if (!BELONGS(CHARACTERS "'", x[i]))
-            return 0;
-    return 1;
-}
-
-static int is_text2(char x[], size_t size)
-{
-    for (size_t i = 0; i < size; ++i)
-        if (!BELONGS(CHARACTERS "\"", x[i]))
+    char quote;
+    if (size < 2 || x[0] != x[size - 1])
+        return 0;
+    quote = x[0] == '"' ? '\'' : x[0] == '\'' ? '"' : '\0';
+    if (!quote)
+        return 0;
+    for (size_t i = 1; i < size - 1; ++i)
+        if (x[i] != quote && !BELONGS(CHARACTERS, x[i]))
             return 0;
     return 1;
 }
@@ -39,12 +37,6 @@ static int is_rule_name(char x[], size_t size)
         if (!BELONGS(LETTERS DIGITS "-", x[i]))
             return 0;
     return 1;
-}
-
-static int is_literal(char x[], size_t size)
-{
-    return size >= 2 && ((x[0] == '"' && x[size - 1] == '"' && is_text1(x + 1, size - 2)) ||
-                         (x[0] == '\'' && x[size - 1] == '\'' && is_text2(x + 1, size - 2)));
 }
 
 static int is_term(char x[], size_t size)
