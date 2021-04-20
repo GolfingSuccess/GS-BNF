@@ -177,7 +177,8 @@ bnf_syntax parse_grammar(char x[])
             rules[i].expr.lists[rules[i].expr.list_number - 1].terms = NULL;
             while ((tmp = findlen(is_term, x, len, index += findlen(is_opt_whitespace, x, len, index))) != -1)
             {
-                rules[i].expr.lists[rules[i].expr.list_number - 1].terms = realloc(rules[i].expr.lists[rules[i].expr.list_number - 1].terms, ++rules[i].expr.lists[rules[i].expr.list_number - 1].term_number * sizeof(bnf_term));
+                rules[i].expr.lists[rules[i].expr.list_number - 1].terms = realloc(rules[i].expr.lists[rules[i].expr.list_number - 1].terms,
+                                                                                   ++rules[i].expr.lists[rules[i].expr.list_number - 1].term_number * sizeof(bnf_term));
                 if (x[index] == '<')
                 {
                     rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].type = TRM_RULE;
@@ -195,7 +196,10 @@ bnf_syntax parse_grammar(char x[])
                     rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].type = TRM_LIT;
                 if (rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].type != TRM_RULE)
                 {
-                    memcpy(rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.literal = malloc(tmp - 1), x + index + 1, tmp - 2);
+                    memcpy(rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.literal =
+                               malloc(tmp - 1),
+                           x + index + 1,
+                           tmp - 2);
                     rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.literal[tmp - 2] = '\0';
                 }
                 index += tmp;
