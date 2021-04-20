@@ -27,6 +27,11 @@ void fprint_grammar_repr(bnf_grammar gr, FILE *fp)
     }
 }
 
+void print_grammar_repr(bnf_grammar gr)
+{
+    fprint_grammar_repr(gr, stdout);
+}
+
 int rule_match_test(bnf_rule rule, char *s, size_t size)
 {
     // unimplemented

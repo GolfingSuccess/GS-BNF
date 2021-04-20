@@ -2,5 +2,4 @@
 #include "bnf.h"
 
 void fprint_grammar_repr(bnf_grammar, FILE *);
-
-#define print_grammar_repr(gr) (fprint_grammar_repr((gr), stdout))
+void print_grammar_repr(bnf_grammar);
