@@ -130,18 +130,18 @@ static int is_rule(char x[], size_t size)
     return index == size;
 }
 
-bnf_grammar parse_grammar(char x[])
+bnf_syntax parse_grammar(char x[])
 {
     size_t index = 0, len = strlen(x), tmp, rnumber = 0;
     bnf_rule *rules = NULL;
-    bnf_grammar s;
+    bnf_syntax s = {0, NULL};
     if (!len)
-        return NULL;
+        return s;
     while (index != len)
     {
         tmp = findlen(is_rule, x, len, index);
         if (tmp == -1)
-            return NULL;
+            return s;
         index += tmp;
     }
     index = 0;
@@ -158,10 +158,9 @@ bnf_grammar parse_grammar(char x[])
         index += findlen(is_expression, x, len, index);
         index += findlen(is_line_end, x, len, index);
     }
-    s = malloc(sizeof(struct bnf_syntax));
     index = 0;
-    s->rule_number = rnumber;
-    s->rules = rules;
+    s.rule_number = rnumber;
+    s.rules = rules;
     for (size_t i = 0; i < rnumber; ++i)
     {
         index += findlen(is_opt_whitespace, x, len, index) + 1;
@@ -205,20 +204,19 @@ bnf_grammar parse_grammar(char x[])
     return s;
 }
 
-void free_grammar(bnf_grammar x)
+void free_grammar(bnf_syntax x)
 {
-    for (size_t rule = 0; rule < x->rule_number; ++rule)
+    for (size_t rule = 0; rule < x.rule_number; ++rule)
     {
-        free(x->rules[rule].name);
-        for (size_t list = 0; list < x->rules[rule].expr.list_number; ++list)
+        free(x.rules[rule].name);
+        for (size_t list = 0; list < x.rules[rule].expr.list_number; ++list)
         {
-            for (size_t term = 0; term < x->rules[rule].expr.lists[list].term_number; ++term)
-                if (x->rules[rule].expr.lists[list].terms[term].type == TRM_LIT)
-                    free(x->rules[rule].expr.lists[list].terms[term].value.literal);
-            free(x->rules[rule].expr.lists[list].terms);
+            for (size_t term = 0; term < x.rules[rule].expr.lists[list].term_number; ++term)
+                if (x.rules[rule].expr.lists[list].terms[term].type == TRM_LIT)
+                    free(x.rules[rule].expr.lists[list].terms[term].value.literal);
+            free(x.rules[rule].expr.lists[list].terms);
         }
-        free(x->rules[rule].expr.lists);
+        free(x.rules[rule].expr.lists);
     }
-    free(x->rules);
-    free(x);
+    free(x.rules);
 }

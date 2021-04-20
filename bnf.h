@@ -36,13 +36,11 @@ typedef struct bnf_rule
     bnf_expression expr;
 } bnf_rule;
 
-struct bnf_syntax
+typedef struct bnf_syntax
 {
     size_t rule_number;
     bnf_rule *rules;
-};
-
-typedef struct bnf_syntax *bnf_grammar;
+} bnf_syntax, bnf_grammar;
 
 bnf_grammar parse_grammar(char []);
 void free_grammar(bnf_grammar);
