@@ -1,9 +1,12 @@
 #ifndef GS_BNF_H_INCLUDED
 #define GS_BNF_H_INCLUDED
+#include <stddef.h>
+
 enum trm_type
 {
     TRM_LIT,
-    TRM_RULE
+    TRM_RULE,
+    TRM_TERM
 };
 
 union trm_val

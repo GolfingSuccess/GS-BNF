@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "bnf.h"
+#include "bnf-features.h"
 
 int main()
 {
@@ -10,7 +10,7 @@ int main()
         puts("BLYAT");
         return 1;
     }
-    puts(x.rules[0].expr.lists[0].terms[0].value.rule->expr.lists[1].terms[1].value.literal);
+    print_grammar_repr(x);
     free_grammar(x);
     return 0;
 }
