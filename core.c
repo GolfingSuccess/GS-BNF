@@ -129,45 +129,6 @@ static int is_rule(char x[], size_t size)
     return index == size;
 }
 
-static bnf_term parse_term(char x[], size_t xsize, bnf_rule r[], size_t rsize)
-{
-    char *tmp;
-    bnf_term res;
-    if (x[0] == '<')
-    {
-        res.type = TRM_RULE;
-        for (size_t i = 0; i < rsize; ++i)
-            if (!strncmp(r[i].name, x + 1, xsize - 2))
-            {
-                res.value.rule = r + i;
-                break;
-            }
-    }
-    else
-    {
-        res.type = TRM_LIT;
-        strncpy(tmp = malloc((xsize - 2) + 1), x + 1, xsize - 2);
-        res.value.literal = tmp;
-    }
-    return res;
-}
-
-static bnf_list parse_list(char x[], size_t xsize, bnf_rule r[], size_t rsize)
-{
-    size_t index = 0, len;
-    bnf_list res;
-    res.term_number = 0;
-    res.terms = NULL;
-    while (index != xsize)
-    {
-        res.terms = realloc(res.terms, ++res.term_number * sizeof(bnf_term));
-        res.terms[res.term_number - 1] = parse_term(x + index, len = findlen(is_term, x, xsize, index), r, rsize);
-        index += len;
-        index += findlen(is_opt_whitespace, x, xsize, index);
-    }
-    return res;
-}
-
 bnf_grammar parse_grammar(char x[])
 {
     size_t index = 0, len = strlen(x), tmp, rnumber = 0;
@@ -211,8 +172,28 @@ bnf_grammar parse_grammar(char x[])
         while (1)
         {
             rules[i].expr.lists = realloc(rules[i].expr.lists, ++rules[i].expr.list_number * sizeof(bnf_list));
-            rules[i].expr.lists[rules[i].expr.list_number - 1] = parse_list(x + index, tmp = findlen(is_list, x, len, index), rules, rnumber);
-            index += tmp;
+            rules[i].expr.lists[rules[i].expr.list_number - 1].term_number = 0;
+            rules[i].expr.lists[rules[i].expr.list_number - 1].terms = NULL;
+            while ((tmp = findlen(is_term, x, len, index += findlen(is_opt_whitespace, x, len, index))) != -1)
+            {
+                rules[i].expr.lists[rules[i].expr.list_number - 1].terms = realloc(rules[i].expr.lists[rules[i].expr.list_number - 1].terms, ++rules[i].expr.lists[rules[i].expr.list_number - 1].term_number * sizeof(bnf_term));
+                if (x[index] == '<')
+                {
+                    rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].type = TRM_RULE;
+                    for (size_t j = 0; j < rnumber; ++j)
+                        if (!strncmp(rules[j].name, x + index + 1, findlen(is_rule_name, x, len, index + 1)))
+                        {
+                            rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.rule = rules + j;
+                            break;
+                        }
+                }
+                else
+                {
+                    rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].type = TRM_LIT;
+                    strncpy(rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.literal = malloc(tmp - 1), x + index + 1, tmp - 2);
+                }
+                index += tmp;
+            }
             if ((tmp = findlen(is_line_end, x, len, index)) != -1)
                 break;
             index += findlen(is_opt_whitespace, x, len, index) + 1;
