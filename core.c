@@ -151,7 +151,8 @@ bnf_syntax parse_grammar(char x[])
         index += findlen(is_opt_whitespace, x, len, index) + 1;
         tmp = findlen(is_rule_name, x, len, index);
         rules[rnumber - 1].name = malloc(tmp + 1);
-        strncpy(rules[rnumber - 1].name, x + index, tmp);
+        memcpy(rules[rnumber - 1].name, x + index, tmp);
+        rules[rnumber - 1].name[tmp] = '\0';
         index += tmp + 1;
         index += findlen(is_opt_whitespace, x, len, index) + 3;
         index += findlen(is_opt_whitespace, x, len, index);
@@ -190,7 +191,8 @@ bnf_syntax parse_grammar(char x[])
                 else
                 {
                     rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].type = TRM_LIT;
-                    strncpy(rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.literal = malloc(tmp - 1), x + index + 1, tmp - 2);
+                    memcpy(rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.literal = malloc(tmp - 1), x + index + 1, tmp - 2);
+                    rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.literal[tmp - 2] = '\0';
                 }
                 index += tmp;
             }
