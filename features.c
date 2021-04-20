@@ -14,7 +14,7 @@ void print_grammar_repr(bnf_grammar gr)
             for (size_t term = 0; term < gr.rules[rule].expr.lists[list].term_number; ++term)
             {
                 putchar(' ');
-                if (gr.rules[rule].expr.lists[list].terms[term].type == TRM_RULE && gr.rules[rule].expr.lists[list].terms[term].value.rule)
+                if (gr.rules[rule].expr.lists[list].terms[term].type == TRM_RULE)
                     printf("<%s>", gr.rules[rule].expr.lists[list].terms[term].value.rule->name);
                 else
                     printf(gr.rules[rule].expr.lists[list].terms[term].type == TRM_TERM ? "<%s>" : strchr(gr.rules[rule].expr.lists[list].terms[term].value.literal, '"') ? "'%s'"
