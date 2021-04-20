@@ -181,6 +181,7 @@ bnf_syntax parse_grammar(char x[])
                 if (x[index] == '<')
                 {
                     rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].type = TRM_RULE;
+                    rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.rule = NULL;
                     for (size_t j = 0; j < rnumber; ++j)
                         if (!strncmp(rules[j].name, x + index + 1, findlen(is_rule_name, x, len, index + 1)))
                         {
@@ -217,7 +218,7 @@ void free_grammar(bnf_syntax x)
         for (size_t list = 0; list < x.rules[rule].expr.list_number; ++list)
         {
             for (size_t term = 0; term < x.rules[rule].expr.lists[list].term_number; ++term)
-                if (x.rules[rule].expr.lists[list].terms[term].type == TRM_LIT)
+                if (x.rules[rule].expr.lists[list].terms[term].type != TRM_RULE)
                     free(x.rules[rule].expr.lists[list].terms[term].value.literal);
             free(x.rules[rule].expr.lists[list].terms);
         }

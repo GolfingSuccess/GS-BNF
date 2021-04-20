@@ -3,7 +3,7 @@
 
 int main()
 {
-    bnf_grammar x = parse_grammar("<abenarthy> ::= <liouville>\n"
+    bnf_grammar x = parse_grammar("<abenarthy> ::= <liouville> <abenarthy> <liouville>\n"
                                   "<liouville> ::= <ball> | \"kka'kka\" 'ab\"cy'\n");
     if (!x.rule_number)
     {
