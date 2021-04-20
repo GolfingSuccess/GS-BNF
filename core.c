@@ -34,7 +34,8 @@ static int is_term(char x[], size_t size)
         return 1;
     if (x[0] != x[size - 1])
         return 0;
-    quote = x[0] == '"' ? '\'' : x[0] == '\'' ? '"' : '\0';
+    quote = x[0] == '"' ? '\'' : x[0] == '\'' ? '"'
+                                              : '\0';
     if (!quote)
         return 0;
     for (size_t i = 1; i < size - 1; ++i)
