@@ -9,7 +9,8 @@
 
 static int is_opt_whitespace(char x[], size_t size)
 {
-    for (size_t i = 0; i < size; ++i)
+    size_t i;
+    for (i = 0; i < size; ++i)
         if (x[i] != ' ')
             return 0;
     return 1;
@@ -17,9 +18,10 @@ static int is_opt_whitespace(char x[], size_t size)
 
 static int is_rule_name(char x[], size_t size)
 {
+    size_t i;
     if (!size || !BELONGS(LETTERS, x[0]))
         return 0;
-    for (size_t i = 1; i < size; ++i)
+    for (i = 1; i < size; ++i)
         if (!BELONGS(ALNUM "-", x[i]))
             return 0;
     return 1;
@@ -28,6 +30,7 @@ static int is_rule_name(char x[], size_t size)
 static int is_term(char x[], size_t size)
 {
     char quote;
+    size_t i;
     if (size < 2)
         return 0;
     if (x[0] == '<' && x[size - 1] == '>' && is_rule_name(x + 1, size - 2))
@@ -38,7 +41,7 @@ static int is_term(char x[], size_t size)
                                               : '\0';
     if (!quote)
         return 0;
-    for (size_t i = 1; i < size - 1; ++i)
+    for (i = 1; i < size - 1; ++i)
         if (x[i] != quote && !BELONGS(CHARACTERS, x[i]))
             return 0;
     return 1;
@@ -132,9 +135,10 @@ static int is_rule(char x[], size_t size)
 
 bnf_syntax parse_grammar(char x[])
 {
-    size_t index = 0, len = strlen(x), tmp, rnumber = 0;
-    bnf_rule *rules = NULL;
+    size_t index = 0, len = strlen(x), tmp, rnumber = 0, i, j;
     bnf_syntax s = {0, NULL};
+    bnf_rule *rules = NULL, r;
+    bnf_list l;
     if (!len)
         return s;
     while (index != len)
@@ -162,45 +166,43 @@ bnf_syntax parse_grammar(char x[])
     index = 0;
     s.rule_number = rnumber;
     s.rules = rules;
-    for (size_t i = 0; i < rnumber; ++i)
+    for (i = 0; i < rnumber; ++i)
     {
         index += findlen(is_opt_whitespace, x, len, index) + 1;
         index += findlen(is_rule_name, x, len, index) + 1;
         index += findlen(is_opt_whitespace, x, len, index) + 3;
         index += findlen(is_opt_whitespace, x, len, index);
-        rules[i].expr.list_number = 0;
-        rules[i].expr.lists = NULL;
+        rules[i].list_number = 0;
+        rules[i].lists = NULL;
         while (1)
         {
-            rules[i].expr.lists = realloc(rules[i].expr.lists, ++rules[i].expr.list_number * sizeof(bnf_list));
-            rules[i].expr.lists[rules[i].expr.list_number - 1].term_number = 0;
-            rules[i].expr.lists[rules[i].expr.list_number - 1].terms = NULL;
+            rules[i].lists = realloc(rules[i].lists, ++rules[i].list_number * sizeof(bnf_list));
+            r = rules[i];
+            r.lists[r.list_number - 1].term_number = 0;
+            r.lists[r.list_number - 1].terms = NULL;
             while ((tmp = findlen(is_term, x, len, index += findlen(is_opt_whitespace, x, len, index))) != -1)
             {
-                rules[i].expr.lists[rules[i].expr.list_number - 1].terms = realloc(rules[i].expr.lists[rules[i].expr.list_number - 1].terms,
-                                                                                   ++rules[i].expr.lists[rules[i].expr.list_number - 1].term_number * sizeof(bnf_term));
+                r.lists[r.list_number - 1].terms = realloc(r.lists[r.list_number - 1].terms, ++r.lists[r.list_number - 1].term_number * sizeof(bnf_term));
+                l = r.lists[r.list_number - 1];
                 if (x[index] == '<')
                 {
-                    rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].type = TRM_RULE;
-                    rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.rule = NULL;
-                    for (size_t j = 0; j < rnumber; ++j)
+                    l.terms[l.term_number - 1].type = TRM_RULE;
+                    l.terms[l.term_number - 1].value.rule = NULL;
+                    for (j = 0; j < rnumber; ++j)
                         if (!strncmp(rules[j].name, x + index + 1, findlen(is_rule_name, x, len, index + 1)))
                         {
-                            rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.rule = rules + j;
+                            l.terms[l.term_number - 1].value.rule = rules + j;
                             break;
                         }
-                    if (!rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.rule)
-                        rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].type = TRM_TERM;
+                    if (!l.terms[l.term_number - 1].value.rule)
+                        l.terms[l.term_number - 1].type = TRM_TERM;
                 }
                 else
-                    rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].type = TRM_LIT;
-                if (rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].type != TRM_RULE)
+                    l.terms[l.term_number - 1].type = TRM_LIT;
+                if (l.terms[l.term_number - 1].type != TRM_RULE)
                 {
-                    memcpy(rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.literal =
-                               malloc(tmp - 1),
-                           x + index + 1,
-                           tmp - 2);
-                    rules[i].expr.lists[rules[i].expr.list_number - 1].terms[rules[i].expr.lists[rules[i].expr.list_number - 1].term_number - 1].value.literal[tmp - 2] = '\0';
+                    memcpy(l.terms[l.term_number - 1].value.literal = malloc(tmp - 1), x + index + 1, tmp - 2);
+                    l.terms[l.term_number - 1].value.literal[tmp - 2] = '\0';
                 }
                 index += tmp;
             }
@@ -216,17 +218,26 @@ bnf_syntax parse_grammar(char x[])
 
 void free_grammar(bnf_syntax x)
 {
-    for (size_t rule = 0; rule < x.rule_number; ++rule)
+    size_t rule, list, term;
+    bnf_rule r;
+    bnf_list l;
+    bnf_term t;
+    for (rule = 0; rule < x.rule_number; ++rule)
     {
-        free(x.rules[rule].name);
-        for (size_t list = 0; list < x.rules[rule].expr.list_number; ++list)
+        r = x.rules[rule];
+        free(r.name);
+        for (list = 0; list < r.list_number; ++list)
         {
-            for (size_t term = 0; term < x.rules[rule].expr.lists[list].term_number; ++term)
-                if (x.rules[rule].expr.lists[list].terms[term].type != TRM_RULE)
-                    free(x.rules[rule].expr.lists[list].terms[term].value.literal);
-            free(x.rules[rule].expr.lists[list].terms);
+            l = r.lists[list];
+            for (term = 0; term < l.term_number; ++term)
+            {
+                t = l.terms[term];
+                if (t.type != TRM_RULE)
+                    free(t.value.literal);
+            }
+            free(l.terms);
         }
-        free(x.rules[rule].expr.lists);
+        free(r.lists);
     }
     free(x.rules);
 }

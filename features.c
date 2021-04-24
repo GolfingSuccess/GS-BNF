@@ -1,26 +1,34 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "bnf.h"
 
 void fprint_grammar_repr(bnf_grammar gr, FILE *fp)
 {
-    for (size_t rule = 0; rule < gr.rule_number; ++rule)
+    size_t rule, list, term;
+    if (!gr.rule_number)
     {
-        fprintf(fp, "<%s> ::=", gr.rules[rule].name);
-        for (size_t list = 0; list < gr.rules[rule].expr.list_number; ++list)
+        fputs("[[[ ILLEGAL BNF SPECIFICATION! ]]]", fp);
+        return;
+    }
+    for (rule = 0; rule < gr.rule_number; ++rule)
+    {
+        bnf_rule r = gr.rules[rule];
+        fprintf(fp, "<%s> ::=", r.name);
+        for (list = 0; list < r.list_number; ++list)
         {
+            bnf_list l = r.lists[list];
             if (list)
                 fputs(" |", fp);
-            for (size_t term = 0; term < gr.rules[rule].expr.lists[list].term_number; ++term)
+            for (term = 0; term < l.term_number; ++term)
             {
+                bnf_term t = l.terms[term];
                 fputc(' ', fp);
                 fprintf(fp,
-                        gr.rules[rule].expr.lists[list].terms[term].type == TRM_LIT
-                            ? strchr(gr.rules[rule].expr.lists[list].terms[term].value.literal, '"') ? "'%s'" : "\"%s\""
+                        t.type == TRM_LIT
+                            ? strchr(t.value.literal, '"') ? "'%s'" : "\"%s\""
                             : "<%s>",
-                        gr.rules[rule].expr.lists[list].terms[term].type == TRM_RULE
-                            ? gr.rules[rule].expr.lists[list].terms[term].value.rule->name
-                            : gr.rules[rule].expr.lists[list].terms[term].value.literal);
+                        t.type == TRM_RULE ? t.value.rule->name : t.value.literal);
             }
         }
         fputc('\n', fp);
@@ -30,9 +38,4 @@ void fprint_grammar_repr(bnf_grammar gr, FILE *fp)
 void print_grammar_repr(bnf_grammar gr)
 {
     fprint_grammar_repr(gr, stdout);
-}
-
-int rule_match_test(bnf_rule rule, char *s, size_t size)
-{
-    // unimplemented
 }

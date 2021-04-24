@@ -2,23 +2,19 @@
 #define GS_BNF_H_INCLUDED
 #include <stddef.h>
 
-enum trm_type
-{
-    TRM_LIT,
-    TRM_RULE,
-    TRM_TERM
-};
-
-union trm_val
-{
-    char *literal;
-    struct bnf_rule *rule;
-};
-
 typedef struct
 {
-    enum trm_type type;
-    union trm_val value;
+    enum
+    {
+        TRM_LIT,
+        TRM_RULE,
+        TRM_TERM
+    } type;
+    union
+    {
+        char *literal;
+        struct bnf_rule *rule;
+    } value;
 } bnf_term;
 
 typedef struct
@@ -27,16 +23,11 @@ typedef struct
     bnf_term *terms;
 } bnf_list;
 
-typedef struct
-{
-    size_t list_number;
-    bnf_list *lists;
-} bnf_expression;
-
 typedef struct bnf_rule
 {
     char *name;
-    bnf_expression expr;
+    size_t list_number;
+    bnf_list *lists;
 } bnf_rule;
 
 typedef struct bnf_syntax
@@ -45,6 +36,6 @@ typedef struct bnf_syntax
     bnf_rule *rules;
 } bnf_syntax, bnf_grammar;
 
-bnf_grammar parse_grammar(char []);
+bnf_grammar parse_grammar(char[]);
 void free_grammar(bnf_grammar);
 #endif
