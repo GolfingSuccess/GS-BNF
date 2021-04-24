@@ -43,7 +43,7 @@ void print_grammar_repr(bnf_grammar gr)
 bnf_rule find_rule_by_name(bnf_grammar gr, char *name)
 {
     size_t rule;
-    bnf_rule not_found = {0, NULL, name}, r;
+    bnf_rule not_found = {name, 0, NULL}, r;
     for(rule = 0; rule < gr.rule_number; ++rule)
     {
         r = gr.rules[rule];
