@@ -39,3 +39,16 @@ void print_grammar_repr(bnf_grammar gr)
 {
     fprint_grammar_repr(gr, stdout);
 }
+
+bnf_rule find_rule_by_name(bnf_grammar gr, char *name)
+{
+    size_t rule;
+    bnf_rule not_found = {0, NULL, name}, r;
+    for(rule = 0; rule < gr.rule_number; ++rule)
+    {
+        r = gr.rules[rule];
+        if (!strcmp(name, r.name))
+            return r;
+    }
+    return not_found;
+}
